@@ -402,7 +402,11 @@ function initDatasetProvider(context: vscode.ExtensionContext) {
             selectedNodes = selectedNodes.filter((sNode) => contextuals.isDsSession(sNode));
             for (const select of selectedNodes) {
                 datasetProvider.deleteSession(select);
+                datasetProvider.getTreeView().onDidChangeSelection((event) => {});
             }
+            const treeView = datasetProvider.getTreeView();
+            treeView.reveal(datasetProvider.mFavoriteSession, { select: true });
+            treeView.reveal(datasetProvider.mFavoriteSession, { select: false });
         })
     );
     context.subscriptions.push(
