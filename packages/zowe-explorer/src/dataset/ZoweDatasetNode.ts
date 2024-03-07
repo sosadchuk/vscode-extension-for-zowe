@@ -369,11 +369,11 @@ export class ZoweDatasetNode extends ZoweTreeNode implements IZoweDatasetTreeNod
         this.description = valueA;
         otherNode.description = valueB;
 
-        if (!valueA) {
+        if (!valueA && !valueB) {
+            return this.compareByName(otherNode, sortDirection);
+        } else if (!valueA) {
             return 1;
-        }
-
-        if (!valueB) {
+        } else if (!valueB) {
             return -1;
         }
 
@@ -390,11 +390,11 @@ export class ZoweDatasetNode extends ZoweTreeNode implements IZoweDatasetTreeNod
         this.description = aValid ? dateA.format("YYYY/MM/DD") : undefined;
         otherNode.description = bValid ? dateB.format("YYYY/MM/DD") : undefined;
 
-        if (!aValid) {
+        if (!aValid && !bValid) {
+            return this.compareByName(otherNode, sortDirection);
+        } else if (!aValid) {
             return 1;
-        }
-
-        if (!bValid) {
+        } else if (!bValid) {
             return -1;
         }
 
