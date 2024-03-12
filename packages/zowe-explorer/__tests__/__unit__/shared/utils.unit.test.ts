@@ -22,7 +22,6 @@ import {
     createFileResponse,
     createInstanceOfProfile,
     createTextDocument,
-    createTreeProviders,
     createTreeView,
 } from "../../../__mocks__/mockCreators/shared";
 import { createDatasetSessionNode } from "../../../__mocks__/mockCreators/datasets";
@@ -46,13 +45,7 @@ async function createGlobalMocks() {
         mockGetInstance: jest.fn(),
         mockProfileInstance: null,
         mockProfilesCache: null,
-        treeProviders: createTreeProviders(),
-        testUSSProvider: null,
-        treeView: createTreeView(),
     };
-    jest.spyOn(Gui, "createTreeView").mockReturnValue(newMocks.treeView);
-    newMocks.testUSSProvider = await createUSSTree(imperative.Logger.getAppLogger());
-    newMocks.testUSSProvider.mSessionNodes.push(createUSSSessionNode(createISession(), createIProfile()));
     newMocks.mockProfilesCache = new ProfilesCache(imperative.Logger.getAppLogger());
     newMocks.mockProfileInstance = createInstanceOfProfile(createIProfile());
     Object.defineProperty(ZoweLogger, "trace", { value: jest.fn(), configurable: true });
@@ -840,6 +833,11 @@ describe("Shared utils unit tests - function promptForEncoding", () => {
         const localStorageGet = jest.spyOn(ZoweLocalStorage, "getValue").mockReturnValue(undefined);
         const localStorageSet = jest.spyOn(ZoweLocalStorage, "setValue").mockReturnValue(undefined);
 
+        jest.spyOn(Gui, "createTreeView").mockReturnValue(createTreeView());
+        const ussTreeProvider = new USSTree();
+
+        jest.spyOn(TreeProviders, "uss", "get").mockReturnValue(ussTreeProvider);
+
         return {
             profile: createIProfile(),
             session: createISession(),
@@ -847,11 +845,14 @@ describe("Shared utils unit tests - function promptForEncoding", () => {
             showQuickPick,
             localStorageGet,
             localStorageSet,
+            ussTreeProvider,
         };
     }
 
     afterEach(() => {
         jest.resetAllMocks();
+        jest.restoreAllMocks();
+        jest.clearAllMocks();
     });
 
     it("prompts for text encoding for USS file", async () => {
@@ -1027,7 +1028,6 @@ describe("Shared utils unit tests - function promptForEncoding", () => {
     });
 
     it("Prompts for other encoding for USS file and make sure new encoding is added to the beginning of the history", async () => {
-        const globalMocks = await createGlobalMocks();
         const blockMocks = createBlockMocks();
         const node = new ZoweUSSNode({
             label: "testFile",
@@ -1037,23 +1037,16 @@ describe("Shared utils unit tests - function promptForEncoding", () => {
             parentPath: "/root",
         });
         node.setEncoding(otherEncoding);
-        const encodingHistory = ["IBM-123", "IBM-456", "IBM-789"];
-
-        jest.spyOn(TreeProviders, "uss", "get").mockReturnValue(globalMocks.testUSSProvider);
-
-        blockMocks.showQuickPick.mockImplementationOnce(async (items) => items[2]);
-        blockMocks.showInputBox.mockResolvedValueOnce(otherEncoding.codepage); // "IBM-1047"
+        blockMocks.showQuickPick.mockResolvedValue({ label: "Other" });
+        blockMocks.showInputBox.mockResolvedValue("IBM-1047");
         await sharedUtils.promptForEncoding(node);
-        expect(blockMocks.showQuickPick).toHaveBeenCalled();
-        expect(blockMocks.showInputBox).toHaveBeenCalled();
-
-        expect(globalMocks.testUSSProvider["persistenceSchema"]).toEqual("");
+        expect(blockMocks.ussTreeProvider.getEncodingHistory()).toEqual(["IBM-1047"]);
     });
 
     it("Prompts for other encoding for USS file and supply an existing encoding and filter/move it to the front", async () => {
         const blockMocks = createBlockMocks();
         const node = new ZoweUSSNode({
-            label: "testFile",
+            label: "rudy",
             collapsibleState: vscode.TreeItemCollapsibleState.None,
             session: blockMocks.session,
             profile: blockMocks.profile,
@@ -1061,16 +1054,12 @@ describe("Shared utils unit tests - function promptForEncoding", () => {
         });
         node.setEncoding(otherEncoding);
         const encodingHistory = ["IBM-123", "IBM-456", "IBM-789"];
-        blockMocks.localStorageGet.mockReturnValueOnce(encodingHistory);
-        blockMocks.showQuickPick.mockImplementationOnce(async (items) => items[2]);
+        blockMocks.ussTreeProvider["mHistory"]["mEncodingHistory"] = encodingHistory;
+        blockMocks.showQuickPick.mockResolvedValue({ label: "Other" });
         blockMocks.showInputBox.mockResolvedValueOnce(encodingHistory[2]);
         await sharedUtils.promptForEncoding(node);
         expect(blockMocks.showQuickPick).toHaveBeenCalled();
         expect(blockMocks.showInputBox).toHaveBeenCalled();
-
-        //spy on ZoweLocalStorage "zowe.encodingHistory"
-        const setValueSpy = jest.spyOn(ZoweLocalStorage, "setValue");
-        encodingHistory.unshift(encodingHistory.splice(2, 1)[0]); // shift 3rd value to front to match with local storage
-        expect(setValueSpy).toBeCalledWith("zowe.encodingHistory", encodingHistory); //recieve: "zowe.encodingHistory", Array []
+        expect(blockMocks.ussTreeProvider.getEncodingHistory()).toEqual(["IBM-789", "IBM-123", "IBM-456"]);
     });
 });
