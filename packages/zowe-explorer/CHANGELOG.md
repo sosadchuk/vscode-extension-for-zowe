@@ -8,6 +8,20 @@ All notable changes to the "vscode-extension-for-zowe" extension will be documen
 
 ### Bug fixes
 
+- To fix clicking submitted job hyperlink throws error [#2813](https://github.com/zowe/vscode-extension-for-zowe/issues/2813)
+- Omitted the following Zowe Explorer commands from the Command Palette that do not execute properly when run as a standalone command: [#2853](https://github.com/zowe/zowe-explorer-vscode/pull/2853)
+  - `Zowe Explorer: Cancel job`
+  - `Zowe Explorer: Filter jobs`
+  - `Zowe Explorer: Filter PDS members`
+  - `Zowe Explorer: Sort jobs`
+  - `Zowe Explorer: Sort PDS members`
+  - `Zowe Explorer: Start Polling`
+  - `Zowe Explorer: Stop Polling`
+- Duplicated profile schema writing on repeated Team Config file initialization:
+  [#2828](https://github.com/zowe/zowe-explorer-vscode/pull/2828)
+
+## `2.15.3`
+
 - Fixed error that could occur when listing data set members that contain control characters in the name [#2807](https://github.com/zowe/zowe-explorer-vscode/pull/2807)
 - Fixed issue where saving changes to favorited data set or USS file could fail when it is opened outside of favorites. [#2820](https://github.com/zowe/vscode-extension-for-zowe/pull/2820)
 - Moved schema warnings into the log file (rather than a UI message) to minimize end-user disruption. [#2860](https://github.com/zowe/zowe-explorer-vscode/pull/2860)
